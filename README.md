@@ -1,8 +1,12 @@
-# Circleville Center Rehab: 3D concept
+# CirclevillePlaza
+Circleville Plaza's 3D Render Plan
+
+**Live site: https://bensappliances1985.github.io/CirclevillePlaza/**
 
 A walkable 3D model of Circleville Center, 201–213 Lancaster Pike, Circleville, OH 43113, showing the
 exterior rehabilitation planned before leasing the vacant units. It runs in any modern browser, on
-desktop or phone, from a single HTML file.
+desktop or phone, from a single HTML file. The page is unlisted: anyone with the link can open it, but
+it asks search engines not to index it.
 
 **What the model shows**
 
@@ -36,37 +40,25 @@ build.mjs         Rebuilds docs/index.html from src/ (node build.mjs).
 The page loads three.js from cdn.jsdelivr.net and fonts from Google Fonts, so viewers need an internet
 connection. Everything else, including the banner, is embedded in the file.
 
-## Put it online
+## Hosting
 
-### GitHub Pages (free, recommended)
-1. Create a new repository on GitHub, for example `circleville-center-3d`.
-2. Upload this folder (or at minimum the `docs` folder) to the repository's `main` branch.
-3. In the repository, open **Settings → Pages**, set **Source** to *Deploy from a branch*, choose
-   `main` and the `/docs` folder, and save.
-4. After a minute the site is live at `https://<your-username>.github.io/circleville-center-3d/`.
-
-From a terminal in this folder:
+The site is published with GitHub Pages from the `/docs` folder of the `main` branch
+(**Settings → Pages**). To publish a change, rebuild and push; the link stays the same and updates
+within a minute or two:
 
 ```bash
-git init
-git add .
-git commit -m "Circleville Center 3D concept"
-git branch -M main
-git remote add origin https://github.com/<your-username>/circleville-center-3d.git
-git push -u origin main
+node build.mjs
+git add -A
+git commit -m "Update the model"
+git push
 ```
 
-### Google Cloud Storage
-```bash
-gcloud storage buckets create gs://circleville-center-3d --location=us-east1
-gcloud storage cp docs/index.html gs://circleville-center-3d/index.html
-gcloud storage buckets add-iam-policy-binding gs://circleville-center-3d --member=allUsers --role=roles/storage.objectViewer
-```
-The page is then at `https://storage.googleapis.com/circleville-center-3d/index.html`.
+To let the page show up in search results, delete the `robots` meta tag in `build.mjs` and rebuild.
+To use your own address (for example `tour.bens-appliances.com`), add it under **Settings → Pages →
+Custom domain** and create the CNAME record GitHub shows with your domain's DNS provider.
 
-### Google Drive or email
-Drive no longer hosts web pages, but you can share `docs/index.html` as a file. Recipients download it
-and open it in Chrome, Edge, Safari or Firefox.
+`docs/index.html` also works on its own: it can be emailed or shared from Google Drive, and recipients
+open it in Chrome, Edge, Safari or Firefox.
 
 ## Change the model
 

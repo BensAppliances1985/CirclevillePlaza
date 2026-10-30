@@ -1,0 +1,14 @@
+{
+  "name": "circleville-center-3d",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Walkable 3D concept of the Circleville Center exterior rehabilitation (201-213 Lancaster Pike, Circleville, OH)",
+  "type": "commonjs",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "three": "0.170.0"
+  }
+}

@@ -1,0 +1,235 @@
+<style>
+/* Layout: full-bleed 3D canvas; a drawing-sheet title block top-left, a control rail along the bottom,
+   and a sheet panel on the right that becomes a bottom sheet on phones. Colors come from the proposed facade palette. */
+:root {
+  --paper: #f3f1eb;
+  --paper-2: #e7e3d9;
+  --ink: #2c2d2b;
+  --ink-2: #5e5f5a;
+  --rule: #cdc7bb;
+  --accent: #2f4a66;
+  --accent-ink: #f3f1eb;
+  --mark: #d19d17;
+  --glass: rgba(243, 241, 235, 0.92);
+  --shadow: 0 8px 28px rgba(24, 26, 30, 0.16);
+  --font-display: "Barlow Condensed", "Arial Narrow", "Segoe UI", sans-serif;
+  --font-body: "Barlow", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #1c1e21; --paper-2: #272a2e; --ink: #ebe8e1; --ink-2: #a8a59e; --rule: #3a3d42;
+    --accent: #9fbcdc; --accent-ink: #15181c; --mark: #eebd3a; --glass: rgba(28, 30, 33, 0.9); --shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #1c1e21; --paper-2: #272a2e; --ink: #ebe8e1; --ink-2: #a8a59e; --rule: #3a3d42;
+  --accent: #9fbcdc; --accent-ink: #15181c; --mark: #eebd3a; --glass: rgba(28, 30, 33, 0.9); --shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45; overflow: hidden; -webkit-font-smoothing: antialiased; }
+#app { position: fixed; inset: 0; overflow: hidden; background: #aab7c4; }
+#scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--mark); outline-offset: 2px; }
+.surface { background: var(--glass); border: 1px solid var(--rule); box-shadow: var(--shadow); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+
+/* title block */
+.titleblock { position: absolute; top: calc(16px + env(safe-area-inset-top, 0px)); left: 16px; max-width: min(380px, calc(100vw - 32px)); display: grid; grid-template-columns: auto 1fr; border-radius: 6px; overflow: hidden; }
+.tb-eyebrow { grid-column: 1 / -1; padding: 9px 14px 0; font-family: var(--font-display); font-size: 13px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); }
+.tb-name { grid-column: 1 / -1; padding: 0 14px 2px; font-family: var(--font-display); font-weight: 700; font-size: 27px; letter-spacing: 0.07em; text-transform: uppercase; line-height: 1.05; text-wrap: balance; }
+.tb-addr { grid-column: 1 / -1; padding: 0 14px 10px; color: var(--ink-2); font-size: 14px; }
+.tb-cell { padding: 7px 14px; border-top: 1px solid var(--rule); font-size: 14px; color: var(--ink-2); display: flex; align-items: center; gap: 8px; min-width: 0; }
+.tb-cell + .tb-cell { border-left: 1px solid var(--rule); }
+.pill { display: inline-block; padding: 1px 8px 0; border-radius: 3px; font-family: var(--font-display); font-weight: 700; font-size: 13px; letter-spacing: 0.1em; background: var(--accent); color: var(--accent-ink); }
+.pill.existing { background: var(--ink-2); color: var(--paper); }
+
+/* control rail */
+.rail { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; padding: 7px; border-radius: 10px; max-width: calc(100vw - 32px); box-sizing: border-box; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 7px; overflow: hidden; }
+.seg button, .rail > button { border: 0; background: transparent; padding: 7px 12px 6px; font-family: var(--font-display); font-weight: 600; font-size: 15px; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.seg button:hover:not([aria-pressed="true"]), .rail > button:hover { background: var(--paper-2); }
+.rail > button { border: 1px solid var(--rule); border-radius: 7px; display: inline-flex; align-items: center; gap: 6px; }
+.rail > button[aria-pressed="true"] { background: var(--mark); color: #1c1c1c; border-color: var(--mark); }
+.rail .tour-icon { width: 0; height: 0; border-left: 9px solid currentColor; border-top: 5.5px solid transparent; border-bottom: 5.5px solid transparent; }
+.rail button[aria-pressed="true"] .tour-icon { width: 9px; height: 11px; border: 0; background: linear-gradient(90deg, currentColor 0 3px, transparent 3px 6px, currentColor 6px 9px); }
+#panelBtn { display: none; }
+
+/* sheet panel */
+.panel { position: absolute; top: calc(16px + env(safe-area-inset-top, 0px)); right: 16px; max-height: calc(100% - 118px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); width: 348px; max-width: calc(100vw - 32px); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; }
+.tabs { display: flex; border-bottom: 1px solid var(--rule); overflow-x: auto; scrollbar-width: none; flex: none; }
+.tabs button { flex: 1 0 auto; border: 0; background: transparent; padding: 10px 10px 8px; font-family: var(--font-display); font-weight: 600; font-size: 14px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-2); cursor: pointer; border-bottom: 3px solid transparent; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--mark); }
+.sheet { flex: 1; overflow-y: auto; padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+.sheet[hidden] { display: none !important; }
+.eyebrow { font-family: var(--font-display); font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); margin: 0; }
+.sheet h2 { font-family: var(--font-display); font-size: 21px; font-weight: 700; letter-spacing: 0.03em; margin: 0; text-wrap: balance; }
+.sheet p { margin: 0; }
+.muted { color: var(--ink-2); }
+.list { display: flex; flex-direction: column; gap: 0; border-top: 1px solid var(--rule); }
+.row { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 10px 0; border-bottom: 1px solid var(--rule); align-items: start; }
+.row .t { font-weight: 600; min-width: 0; }
+.row .d { grid-column: 1; color: var(--ink-2); font-size: 14px; min-width: 0; }
+.row .go { grid-row: 1 / span 2; grid-column: 2; align-self: center; }
+.linkbtn { border: 1px solid var(--rule); background: transparent; border-radius: 6px; padding: 4px 10px 3px; font-family: var(--font-display); font-weight: 600; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }
+.linkbtn:hover { background: var(--paper-2); }
+.views { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.views button { text-align: left; border: 1px solid var(--rule); background: transparent; border-radius: 6px; padding: 9px 10px 8px; cursor: pointer; font-weight: 600; font-size: 14px; line-height: 1.25; }
+.views button:hover { background: var(--paper-2); }
+.views .kind { display: block; font-family: var(--font-display); font-weight: 600; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); margin-bottom: 2px; }
+.scope-mark { display: inline-block; width: 9px; height: 9px; background: var(--mark); margin-right: 8px; transform: translateY(-1px); }
+.group-label { margin-top: 6px; }
+.scheme { border: 1px solid var(--rule); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px; cursor: pointer; background: transparent; text-align: left; }
+.scheme[aria-pressed="true"] { outline: 2px solid var(--ink); outline-offset: -1px; }
+.scheme-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.scheme-name { font-family: var(--font-display); font-weight: 700; font-size: 18px; letter-spacing: 0.03em; }
+.tag { font-family: var(--font-display); font-size: 12px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; padding: 1px 7px 0; border: 1px solid var(--rule); border-radius: 3px; color: var(--ink-2); white-space: nowrap; }
+.tag.rec { background: var(--mark); border-color: var(--mark); color: #1c1c1c; }
+.strip { display: grid; grid-template-columns: repeat(4, 1fr); height: 30px; border-radius: 4px; overflow: hidden; border: 1px solid var(--rule); }
+.chips { display: grid; grid-template-columns: 16px 1fr; gap: 5px 8px; font-size: 13px; }
+.chip { width: 16px; height: 16px; border-radius: 3px; border: 1px solid rgba(0, 0, 0, 0.18); margin-top: 1px; }
+.chip-text { min-width: 0; }
+.code { font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.status { font-family: var(--font-display); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 1px 6px 0; border-radius: 3px; border: 1px solid var(--rule); margin-left: 6px; }
+.status.anchor { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.status.coming { background: var(--mark); border-color: var(--mark); color: #1c1c1c; }
+.status.available { border-style: dashed; }
+.keys { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 14px; align-items: baseline; }
+kbd { font-family: var(--font-mono); font-size: 12px; border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--paper-2); white-space: nowrap; }
+.fine { font-size: 12.5px; color: var(--ink-2); border-top: 1px solid var(--rule); padding-top: 12px; }
+
+/* site plan */
+.minimap { position: absolute; left: 16px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); padding: 8px 8px 6px; border-radius: 8px; display: flex; flex-direction: column; gap: 4px; }
+.minimap canvas { width: 212px; height: 164px; display: block; cursor: crosshair; }
+.minimap .cap { display: flex; justify-content: space-between; font-family: var(--font-display); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); }
+
+.hint { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(80px + env(safe-area-inset-bottom, 0px)); padding: 6px 12px; border-radius: 6px; font-size: 14px; white-space: nowrap; max-width: calc(100vw - 32px); overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.joystick { position: absolute; left: 24px; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); width: 112px; height: 112px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.75); background: rgba(20, 22, 26, 0.28); touch-action: none; display: grid; place-items: center; }
+.joystick .knob { width: 46px; height: 46px; border-radius: 50%; background: rgba(255, 255, 255, 0.9); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); pointer-events: none; }
+
+.loading { position: absolute; inset: 0; display: grid; place-items: center; background: var(--paper); z-index: 5; transition: opacity 0.5s ease; padding: 16px; }
+.loading.done { opacity: 0; pointer-events: none; }
+.loading-card { width: min(420px, 100%); display: flex; flex-direction: column; gap: 10px; }
+.loading-card .tb-name { padding: 0; font-size: 34px; }
+.bar { height: 4px; background: var(--paper-2); border-radius: 2px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--mark); transition: width 0.25s ease; }
+.loading .err { color: var(--ink); background: var(--paper-2); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 12px; }
+
+@media (max-width: 760px) {
+  .rail { left: 8px; right: 8px; transform: none; max-width: none; gap: 6px; padding: 6px; }
+  .panel { top: auto; left: 8px; right: 8px; width: auto; max-width: none; max-height: none; bottom: calc(112px + env(safe-area-inset-bottom, 0px)); height: min(54vh, 520px); }
+  .panel:not(.open) { display: none; }
+  #panelBtn { display: inline-flex; }
+  .minimap { display: none; }
+  .titleblock { max-width: calc(100vw - 32px); }
+  .tb-name { font-size: 22px; }
+  .tb-addr { font-size: 13px; }
+  .hint { bottom: calc(118px + env(safe-area-inset-bottom, 0px)); font-size: 13px; }
+  .joystick { bottom: calc(132px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 420px) {
+  .seg button, .rail > button { padding: 7px 9px 6px; font-size: 14px; }
+}
+@media (prefers-reduced-motion: reduce) { .loading, .bar i { transition: none; } }
+</style>
+
+<div id="app">
+  <canvas id="scene" tabindex="0" aria-label="3D model of Circleville Center"></canvas>
+
+  <header class="titleblock surface">
+    <div class="tb-eyebrow">Exterior rehab concept</div>
+    <div class="tb-name">Circleville Center</div>
+    <div class="tb-addr">201–213 Lancaster Pike · Circleville, OH 43113</div>
+    <div class="tb-cell"><span class="pill" id="phasePill">Proposed</span></div>
+    <div class="tb-cell" id="phaseNote">Iron Ore &amp; Alabaster palette</div>
+  </header>
+
+  <aside class="panel surface" id="panel" aria-label="Project details">
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tab-views" aria-selected="true" data-tab="views">Views</button>
+      <button role="tab" id="tab-scope" aria-selected="false" data-tab="scope">Scope</button>
+      <button role="tab" id="tab-palette" aria-selected="false" data-tab="palette">Palette</button>
+      <button role="tab" id="tab-tenants" aria-selected="false" data-tab="tenants">Tenants</button>
+      <button role="tab" id="tab-help" aria-selected="false" data-tab="help">Controls</button>
+    </div>
+    <section class="sheet" data-sheet="views">
+      <p class="eyebrow">Jump to a viewpoint</p>
+      <div class="views" id="viewList"></div>
+      <p class="muted">Standing viewpoints stay walkable: switch to Walk and move from there. Click the site plan to jump anywhere.</p>
+    </section>
+    <section class="sheet" data-sheet="scope" hidden>
+      <p class="eyebrow">Rehabilitation before leasing</p>
+      <div class="list" id="scopeList"></div>
+      <p class="muted">Toggle Existing and Proposed in the bottom bar to compare each item.</p>
+    </section>
+    <section class="sheet" data-sheet="palette" hidden>
+      <p class="eyebrow">Facade color schemes · tap one to repaint the model</p>
+      <div id="schemeList" style="display:flex;flex-direction:column;gap:10px"></div>
+      <p class="muted">Screen colors are approximate. Confirm with physical chips under daylight before ordering paint or metal coatings.</p>
+      <p class="muted">Bright reds, blues and teals fade fastest in direct sun. On the metal roof and parapet, use a high-performance coating (fluoropolymer or urethane) or factory-finished PVDF panels, not standard house paint.</p>
+    </section>
+    <section class="sheet" data-sheet="tenants" hidden>
+      <p class="eyebrow">Storefronts, southwest to northeast</p>
+      <div class="list" id="tenantList"></div>
+      <p class="muted">Frontage is measured from the October 6 photo survey and rounded to 5 ft.</p>
+    </section>
+    <section class="sheet" data-sheet="help" hidden>
+      <p class="eyebrow">Orbit</p>
+      <div class="keys">
+        <span>Drag</span><span>Rotate around the site</span>
+        <span>Right-drag or two fingers</span><span>Pan</span>
+        <span>Scroll or pinch</span><span>Zoom</span>
+        <span><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd></span><span>Pan with the keyboard</span>
+      </div>
+      <p class="eyebrow">Walk</p>
+      <div class="keys">
+        <span><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></span><span>Move and step sideways</span>
+        <span><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd></span><span>Move and turn</span>
+        <span><kbd>Shift</kbd></span><span>Hold to walk faster</span>
+        <span>Drag</span><span>Look around</span>
+        <span>Joystick</span><span>Move on phones and tablets</span>
+      </div>
+      <p class="fine">Concept rendering for planning and leasing discussions. The storefront is measured from a 71-photo survey and tape measurements taken October 6, 2026 (about ±1 ft); the lot, pylon and rear outline come from site photos of September 29, aerial imagery and the building footprint (© OpenStreetMap contributors). Tenant names and marks belong to their owners and are shown for illustration. Neighboring buildings are simplified massing.</p>
+    </section>
+  </aside>
+
+  <div class="minimap surface" id="minimap">
+    <canvas id="mapCanvas" width="424" height="328" aria-label="Site plan. Click to move the view."></canvas>
+    <div class="cap"><span>Site plan</span><span id="mapMode">Orbit</span></div>
+  </div>
+
+  <div class="hint surface" id="hint" hidden></div>
+  <div class="joystick" id="joy" hidden><div class="knob"></div></div>
+
+  <nav class="rail surface" aria-label="View controls">
+    <div class="seg" role="group" aria-label="Condition">
+      <button id="btn-before" data-phase="before" aria-pressed="false">Existing</button>
+      <button id="btn-after" data-phase="after" aria-pressed="true">Proposed</button>
+    </div>
+    <div class="seg" role="group" aria-label="Navigation">
+      <button id="btn-orbit" data-mode="orbit" aria-pressed="true">Orbit</button>
+      <button id="btn-walk" data-mode="walk" aria-pressed="false">Walk</button>
+    </div>
+    <div class="seg" role="group" aria-label="Lighting">
+      <button id="btn-day" data-light="day" aria-pressed="true">Day</button>
+      <button id="btn-golden" data-light="golden" aria-pressed="false">Evening</button>
+      <button id="btn-dusk" data-light="dusk" aria-pressed="false">Dusk</button>
+    </div>
+    <button id="tourBtn" aria-pressed="false"><span class="tour-icon" aria-hidden="true"></span>Tour</button>
+    <button id="panelBtn" aria-expanded="false" aria-controls="panel">Details</button>
+  </nav>
+
+  <div class="loading" id="loading">
+    <div class="loading-card">
+      <div class="tb-name">Circleville Center</div>
+      <div class="muted">201–213 Lancaster Pike · exterior rehab concept</div>
+      <div class="bar"><i id="loadBar"></i></div>
+      <div class="muted" id="loadText">Starting the 3D engine</div>
+    </div>
+  </div>
+</div>

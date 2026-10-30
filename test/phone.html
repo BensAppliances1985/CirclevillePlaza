@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Phone preview harness</title>
+<style>
+  body { margin: 0; background: #555; display: flex; gap: 24px; padding: 20px; font-family: sans-serif; }
+  iframe { width: 390px; height: 844px; border: 0; background: #fff; }
+</style>
+</head>
+<body>
+<iframe id="a"></iframe>
+<iframe id="b"></iframe>
+<script>
+  const q = location.hash.slice(1).split('|');
+  document.getElementById('a').src = '../docs/index.html#' + (q[0] || 'test:view=overview');
+  document.getElementById('b').src = '../docs/index.html#' + (q[1] || 'test:view=pylon,open=1,tab=scope');
+</script>
+</body>
+</html>
